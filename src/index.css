@@ -83,7 +83,7 @@ html, body, #root {
   display: block;
   padding-top: 100%; /* 1:1 宽高比 */
 }
-.calendar-day-cell > * {
+.calendar-day-cell__content {
   position: absolute;
   top: 0;
   left: 0;
@@ -93,6 +93,7 @@ html, body, #root {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1px;
 }
 
 /* 2. 微信浏览器中 fixed 定位修复 */

@@ -123,7 +123,7 @@ export default function CalendarView({ reminders, onToggleComplete, onEditRemind
               <button
                 key={idx}
                 onClick={() => setSelectedDate(dateStr)}
-                className={`calendar-day-cell flex flex-col items-center justify-center rounded-lg text-sm relative transition-all ${
+                className={`calendar-day-cell rounded-lg text-sm relative transition-all ${
                   cell.otherMonth ? 'text-gray-300' : 'text-gray-700'
                 } ${
                   isSelected
@@ -133,29 +133,31 @@ export default function CalendarView({ reminders, onToggleComplete, onEditRemind
                     : 'hover:bg-gray-50'
                 }`}
               >
-                <span className={isCurrentDay && !isSelected ? 'text-wechat-green' : ''}>
-                  {cell.day}
-                </span>
-                {/* 提醒指示点 */}
-                {hasReminders && (
-                  <div className="flex gap-0.5 mt-0.5">
-                    {dayReminders.slice(0, 3).map((r, i) => (
-                      <div
-                        key={i}
-                        className={`w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full ${
-                          isSelected ? 'bg-white' :
-                          r.completed ? 'bg-gray-300' :
-                          isOverdue(r) ? 'bg-red-400' : 'bg-wechat-green'
-                        }`}
-                      />
-                    ))}
-                    {dayReminders.length > 3 && (
-                      <span className={`text-[8px] ${isSelected ? 'text-white' : 'text-gray-400'}`}>
-                        +
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="calendar-day-cell__content">
+                  <span className={isCurrentDay && !isSelected ? 'text-wechat-green' : ''}>
+                    {cell.day}
+                  </span>
+                  {/* 提醒指示点 */}
+                  {hasReminders && (
+                    <div className="flex gap-0.5 mt-0.5">
+                      {dayReminders.slice(0, 3).map((r, i) => (
+                        <div
+                          key={i}
+                          className={`w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full ${
+                            isSelected ? 'bg-white' :
+                            r.completed ? 'bg-gray-300' :
+                            isOverdue(r) ? 'bg-red-400' : 'bg-wechat-green'
+                          }`}
+                        />
+                      ))}
+                      {dayReminders.length > 3 && (
+                        <span className={`text-[8px] ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                          +
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </button>
             )
           })}
