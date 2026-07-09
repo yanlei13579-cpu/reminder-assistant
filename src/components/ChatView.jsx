@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import VoiceButton from './VoiceButton'
+import { isWeChatBrowser } from '../hooks/useSpeechRecognition'
 import { parseReminderFromText, getReminderDateText, getTagColor, isOverdue, contactTypeLabel } from '../utils/helpers'
 
 /**
@@ -160,8 +161,17 @@ export default function ChatView({ chat, messages, onSendMessage, onCreateRemind
         ) : (
           <div className="flex items-end gap-2">
             <button
-              onClick={() => setInputMode('voice')}
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 flex-shrink-0"
+              onClick={() => {
+                if (isWeChatBrowser()) return
+                setInputMode('voice')
+              }}
+              disabled={isWeChatBrowser()}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0 ${
+                isWeChatBrowser()
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              title={isWeChatBrowser() ? '微信浏览器不支持语音输入' : '切换语音输入'}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" />

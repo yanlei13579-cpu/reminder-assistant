@@ -14,8 +14,19 @@ export default function ReminderModal({ prefill, editing, customTags, onAddTag, 
     setIsDesktop(window.innerWidth >= 1024)
     const mql = window.matchMedia('(min-width: 1024px)')
     const handler = (e) => setIsDesktop(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
+    // 兼容旧版浏览器（微信 X5 内核）
+    if (mql.addEventListener) {
+      mql.addEventListener('change', handler)
+    } else if (mql.addListener) {
+      mql.addListener(handler)
+    }
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener('change', handler)
+      } else if (mql.removeListener) {
+        mql.removeListener(handler)
+      }
+    }
   }, [])
 
   if (isDesktop) {
@@ -27,7 +38,7 @@ export default function ReminderModal({ prefill, editing, customTags, onAddTag, 
 /* ============================================================
  * 共享逻辑 Hook — 两个模式共用相同的表单状态和操作
  * ============================================================ */
-function useReminderForm({ prefill, editing, onSave }) {
+function useReminderForm({ prefill, editing, onSave, onAddTag, customTags }) {
   const isAutoParse = !editing && prefill && (prefill.rawText || prefill.text)
 
   const [form, setForm] = useState({

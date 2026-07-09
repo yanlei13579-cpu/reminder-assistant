@@ -10,11 +10,21 @@ import { useState, useRef, useCallback, useEffect } from 'react'
  * - 防止 not-allowed 时反复弹 alert 和重启
  * - 提供降级模式提示
  */
+/**
+ * 检测是否在微信内置浏览器环境中
+ * 微信 X5 内核不支持 Web Speech API，需要特殊处理
+ */
+export function isWeChatBrowser() {
+  if (typeof navigator === 'undefined') return false
+  return /micromessenger/i.test(navigator.userAgent || '')
+}
+
 export function useSpeechRecognition(onResult) {
   const [isListening, setIsListening] = useState(false)
   const [interimText, setInterimText] = useState('')
   const [supported, setSupported] = useState(false)
-  const [errorState, setErrorState] = useState(null) // 'not-allowed' | 'no-speech' | null
+  const [errorState, setErrorState] = useState(null) // 'not-allowed' | 'no-speech' | 'wechat' | null
+  const [isWeChat, setIsWeChat] = useState(false)
   const recognitionRef = useRef(null)
   const onResultRef = useRef(onResult)
   // 防止同一错误反复触发 alert/日志的节流标记
@@ -27,10 +37,15 @@ export function useSpeechRecognition(onResult) {
 
   // 初始化语音识别
   useEffect(() => {
+    // 检测微信环境
+    const inWeChat = isWeChatBrowser()
+    setIsWeChat(inWeChat)
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
       setSupported(false)
-      setErrorState('unsupported')
+      // 微信环境给出特定错误标识，便于 UI 层展示针对性引导
+      setErrorState(inWeChat ? 'wechat' : 'unsupported')
       return
     }
 
@@ -158,5 +173,5 @@ export function useSpeechRecognition(onResult) {
     errorReportedRef.current = false
   }, [])
 
-  return { isListening, interimText, start, stop, toggle, supported, errorState, resetError }
+  return { isListening, interimText, start, stop, toggle, supported, errorState, resetError, isWeChat }
 }

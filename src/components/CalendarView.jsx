@@ -123,7 +123,7 @@ export default function CalendarView({ reminders, onToggleComplete, onEditRemind
               <button
                 key={idx}
                 onClick={() => setSelectedDate(dateStr)}
-                className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative transition-all ${
+                className={`calendar-day-cell flex flex-col items-center justify-center rounded-lg text-sm relative transition-all ${
                   cell.otherMonth ? 'text-gray-300' : 'text-gray-700'
                 } ${
                   isSelected

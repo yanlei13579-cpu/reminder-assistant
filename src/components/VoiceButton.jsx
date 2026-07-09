@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
+import { useSpeechRecognition, isWeChatBrowser } from '../hooks/useSpeechRecognition'
 
 /**
  * 语音输入按钮
@@ -10,6 +10,7 @@ import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
  *
  * 增强功能：
  * - 不可用/未授权时显示明确的降级提示
+ * - 微信环境自动切换文字模拟模式（微信不支持 Web Speech API）
  * - 支持手动文本模拟模式（当语音不可用时的替代方案）
  */
 export default function VoiceButton({
@@ -18,9 +19,10 @@ export default function VoiceButton({
   label = '语音输入',
   placeholder = '点击说话，自动识别事项'
 }) {
-  const { isListening, interimText, toggle, supported, errorState, resetError } = useSpeechRecognition(onResult)
+  const { isListening, interimText, toggle, supported, errorState, resetError, isWeChat } = useSpeechRecognition(onResult)
   // 文本模拟模式：语音不可用时允许手动输入文本模拟语音识别结果
-  const [simulateMode, setSimulateMode] = useState(false)
+  // 微信环境下默认开启模拟模式
+  const [simulateMode, setSimulateMode] = useState(isWeChatBrowser())
   const [simulateText, setSimulateText] = useState('')
   const simulateInputRef = useRef(null)
 
@@ -67,6 +69,14 @@ export default function VoiceButton({
 
   // ====== 渲染错误/降级提示 ======
   const renderErrorHint = () => {
+    if (isWeChat) {
+      return (
+        <div className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-md p-2 mt-1.5 leading-relaxed">
+          <p className="font-medium mb-1">📱 微信浏览器不支持语音输入</p>
+          <p>微信内置浏览器未开放麦克风接口，请使用下方的<strong>文字输入</strong>替代，系统会自动解析客户信息。</p>
+        </div>
+      )
+    }
     if (!supported || errorState === 'unsupported') {
       return null
     }
@@ -118,20 +128,21 @@ export default function VoiceButton({
             isListening ? 'bg-red-100 text-red-500' : 'hover:bg-gray-200 text-gray-600'
           }`}
           title={
-            !supported ? '浏览器不支持语音识别'
+            isWeChat ? '微信不支持语音，请使用文字输入'
+            : !supported ? '浏览器不支持语音识别'
             : errorState === 'not-allowed' ? '麦克风权限受限'
             : label
           }
         >
           {isListening ? waveIcon : micIcon}
         </button>
-        {(errorState === 'not-allowed') && (
+        {(isWeChat || errorState === 'not-allowed') && (
           <button
             onClick={() => setSimulateMode(!simulateMode)}
             className="block w-full mt-1 text-xs text-wechat-green hover:underline"
             title="切换到文字模拟模式"
           >
-            文字模拟
+            {isWeChat ? '📝 文字输入' : '文字模拟'}
           </button>
         )}
       </div>
@@ -144,7 +155,7 @@ export default function VoiceButton({
       <div className="relative">
         <button
           onClick={() => {
-            if (errorState === 'not-allowed') {
+            if (isWeChat || errorState === 'not-allowed') {
               setSimulateMode(!simulateMode)
             } else {
               toggle()
@@ -153,21 +164,24 @@ export default function VoiceButton({
           className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 font-medium transition-all ${
             isListening
               ? 'bg-red-500 text-white'
-              : errorState === 'not-allowed'
+              : (isWeChat || errorState === 'not-allowed')
                 ? 'bg-amber-500 text-white hover:bg-amber-600'
                 : 'bg-wechat-green text-white hover:bg-wechat-green-dark'
           }`}
           title={
-            errorState === 'not-allowed' ? '点击使用文字模拟模式'
+            isWeChat ? '微信不支持语音，点击使用文字输入'
+            : errorState === 'not-allowed' ? '点击使用文字模拟模式'
             : supported ? label : '浏览器不支持语音识别'
           }
         >
           {isListening ? waveIcon : micIcon}
-          {errorState === 'not-allowed'
-            ? (simulateMode ? '取消模拟' : '📝 文字模拟')
-            : isListening
-              ? '聆听中...'
-              : label
+          {isWeChat
+            ? (simulateMode ? '取消输入' : '📝 文字输入')
+            : errorState === 'not-allowed'
+              ? (simulateMode ? '取消模拟' : '📝 文字模拟')
+              : isListening
+                ? '聆听中...'
+                : label
           }
         </button>
 
@@ -191,7 +205,7 @@ export default function VoiceButton({
     <div className="relative">
       <button
         onClick={() => {
-          if (errorState === 'not-allowed') {
+          if (isWeChat || errorState === 'not-allowed') {
             setSimulateMode(!simulateMode)
           } else {
             toggle()
@@ -200,7 +214,7 @@ export default function VoiceButton({
         className={`w-full py-2.5 rounded-lg font-medium transition-all ${
           isListening
             ? 'bg-red-50 text-red-500 border-2 border-red-300'
-            : errorState === 'not-allowed'
+            : (isWeChat || errorState === 'not-allowed')
               ? 'bg-amber-50 text-amber-600 border-2 border-amber-300'
               : 'bg-white text-gray-600 border border-gray-200 hover:border-wechat-green'
         }`}
@@ -209,6 +223,13 @@ export default function VoiceButton({
           <span className="flex items-center justify-center gap-2">
             {waveIcon}
             正在聆听... 点击停止
+          </span>
+        ) : isWeChat ? (
+          <span className="flex items-center justify-center gap-1.5">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            📝 点击输入文字（微信不支持语音）
           </span>
         ) : errorState === 'not-allowed' ? (
           <span className="flex items-center justify-center gap-1.5">
